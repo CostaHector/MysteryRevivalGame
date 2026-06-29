@@ -18,4 +18,15 @@ public partial class Main : Node {
 		var startPosition = GetNode<Marker2D>("StartPosition");
 		player.Start(startPosition.Position);
 	}
+
+	// 从 BornRoom 切换到 DeprecatedHouse 场景（玩家与 HUD 保留）
+	public void GotoDeprecatedHouse() {
+		var bornRoom = GetNode("BornRoom");
+		bornRoom.QueueFree();
+
+		var deprecatedHouseScene = GD.Load<PackedScene>("res://DeprecatedHouse.tscn");
+		var deprecatedHouse = deprecatedHouseScene.Instantiate<Node2D>();
+		deprecatedHouse.Name = "DeprecatedHouse";
+		AddChild(deprecatedHouse);
+	}
 }

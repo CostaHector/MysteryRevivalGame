@@ -1,8 +1,23 @@
 [gd_scene format=3 uid="uid://bijhhvf4v0bum"]
 
 [ext_resource type="Texture2D" uid="uid://cduskjxar2c6m" path="res://asserts/room.jpg" id="1_gogo6"]
+[ext_resource type="Script" uid="uid://c7k2m9x4b6p8q" path="res://BornRoom.cs" id="2_bornroom"]
+
+[sub_resource type="RectangleShape2D" id="rect_exit_1"]
+size = Vector2(300, 300)
 
 [node name="BornRoom" type="Node2D" unique_id=77420351]
+script = ExtResource("2_bornroom")
 
 [node name="Background" type="Sprite2D" parent="." unique_id=595590955]
 texture = ExtResource("1_gogo6")
+
+; 右上角点击区域：无 Camera2D 时世界原点在屏幕左上角，room.jpg 只有右下象限可见 (0~1000, 0~648)
+; Area2D 放在可见区域的右上角
+[node name="ExitToDeprecatedHouse" type="Area2D" parent="." unique_id=100000001]
+position = Vector2(850, 150)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitToDeprecatedHouse" unique_id=100000002]
+shape = SubResource("rect_exit_1")
+
+[connection signal="input_event" from="ExitToDeprecatedHouse" to="." method="_on_exit_to_deprecated_house_input_event"]
