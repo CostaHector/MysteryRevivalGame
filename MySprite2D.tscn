@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://b5a6eepb053qw"]
+
+[ext_resource type="Texture2D" uid="uid://dgpmvvlpa20h2" path="res://icon.svg" id="1_lublk"]
+[ext_resource type="Script" uid="uid://bdrpc7oatg503" path="res://MySprite2D.cs" id="2_a8a4u"]
+
+[node name="MySprite2D" type="Sprite2D" unique_id=641672685]
+position = Vector2(547, 337)
+texture = ExtResource("1_lublk")
+script = ExtResource("2_a8a4u")

@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://bj76wb552wsj7"]
+
+[ext_resource type="Script" uid="uid://711p5vof6c8q" path="res://HeadsUpDisplay.cs" id="1_v2rtw"]
+
+[node name="HeadsUpDisplay" type="CanvasLayer" unique_id=543962075]
+script = ExtResource("1_v2rtw")
+
+[node name="WelcomePageVLayout" type="VBoxContainer" parent="." unique_id=1615810584]
+offset_top = 1.0
+offset_right = 1151.0
+offset_bottom = 650.0
+
+[node name="GameTitle" type="Label" parent="WelcomePageVLayout" unique_id=1203459887]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 128
+text = "神秘复苏"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CreatorsLabel" type="Label" parent="WelcomePageVLayout" unique_id=197333449]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 48
+text = "创作者名单: Costa, Yang "
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="StartButton" type="Button" parent="WelcomePageVLayout" unique_id=1019150989]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 64
+text = "开始游戏"
+
+[connection signal="button_down" from="WelcomePageVLayout/StartButton" to="." method="_on_start_button_button_down"]

@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bijhhvf4v0bum"]
+
+[ext_resource type="Texture2D" uid="uid://cduskjxar2c6m" path="res://asserts/room.jpg" id="1_gogo6"]
+
+[node name="BornRoom" type="Node2D" unique_id=77420351]
+
+[node name="Background" type="Sprite2D" parent="." unique_id=595590955]
+texture = ExtResource("1_gogo6")
