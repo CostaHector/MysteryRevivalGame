@@ -1,8 +1,6 @@
 [gd_scene format=3 uid="uid://d672x2vr0wi5"]
 
-[ext_resource type="Texture2D" uid="uid://dr75mopigmirg" path="res://asserts/DeprecatedHouse.webp" id="1_dephouse"]
+[ext_resource type="Script" uid="uid://dn38cwlw5t6xk" path="res://DeprecatedHouse.cs" id="1_to886"]
 
-[node name="DeprecatedHouse" type="Node2D"]
-
-[node name="Background" type="Sprite2D" parent="."]
-texture = ExtResource("1_dephouse")
+[node name="DeprecatedHouse" type="Node2D" unique_id=1302805017]
+script = ExtResource("1_to886")

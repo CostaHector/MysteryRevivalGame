@@ -1,18 +1,6 @@
 [gd_scene format=3 uid="uid://c64n8jijvjwc"]
 
 [ext_resource type="Script" uid="uid://dvtcft2bwyu8v" path="res://Main.cs" id="1_glv2v"]
-[ext_resource type="PackedScene" uid="uid://bijhhvf4v0bum" path="res://BornRoom.tscn" id="2_cm0pq"]
-[ext_resource type="PackedScene" uid="uid://b5a6eepb053qw" path="res://MySprite2D.tscn" id="2_uu6xs"]
-[ext_resource type="PackedScene" uid="uid://bj76wb552wsj7" path="res://HeadsUpDisplay.tscn" id="3_r0du0"]
 
 [node name="Main" type="Node" unique_id=262928617]
 script = ExtResource("1_glv2v")
-
-[node name="BornRoom" parent="." unique_id=77420351 instance=ExtResource("2_cm0pq")]
-
-[node name="StartPosition" type="Marker2D" parent="." unique_id=893599105]
-position = Vector2(200, 200)
-
-[node name="MySprite2D" parent="." unique_id=641672685 instance=ExtResource("2_uu6xs")]
-
-[node name="HeadsUpDisplay" parent="." unique_id=543962075 instance=ExtResource("3_r0du0")]

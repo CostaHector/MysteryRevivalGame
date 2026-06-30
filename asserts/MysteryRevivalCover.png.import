@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxaqdnx3b0r4b"
-path="res://.godot/imported/room.jpg-aef83d42693ec832136cd26bf74fcb62.ctex"
+uid="uid://jlqict23rghw"
+path="res://.godot/imported/MysteryRevivalCover.png-14ec8a1292531bc1cd40f43bad9df532.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://asserts/room.jpg"
-dest_files=["res://.godot/imported/room.jpg-aef83d42693ec832136cd26bf74fcb62.ctex"]
+source_file="res://asserts/MysteryRevivalCover.png"
+dest_files=["res://.godot/imported/MysteryRevivalCover.png-14ec8a1292531bc1cd40f43bad9df532.ctex"]
 
 [params]
 

@@ -1,23 +1,20 @@
-[gd_scene format=3 uid="uid://bijhhvf4v0bum"]
+[gd_scene format=3 uid="uid://cf1u6w1wrn4xn"]
 
-[ext_resource type="Texture2D" uid="uid://cduskjxar2c6m" path="res://asserts/room.jpg" id="1_gogo6"]
-[ext_resource type="Script" uid="uid://c7k2m9x4b6p8q" path="res://BornRoom.cs" id="2_bornroom"]
-
-[sub_resource type="RectangleShape2D" id="rect_exit_1"]
-size = Vector2(300, 300)
+[ext_resource type="Script" uid="uid://c7k2nax4b6p8q" path="res://BornRoom.cs" id="2_bornroom"]
+[ext_resource type="Texture2D" uid="uid://d1rkg032ak45g" path="res://asserts/BornRoom.jpg" id="2_nripk"]
 
 [node name="BornRoom" type="Node2D" unique_id=77420351]
 script = ExtResource("2_bornroom")
 
-[node name="Background" type="Sprite2D" parent="." unique_id=595590955]
-texture = ExtResource("1_gogo6")
+[node name="Background" type="Sprite2D" parent="." unique_id=1639047473]
+z_index = -1
+position = Vector2(48, -40)
+texture = ExtResource("2_nripk")
+centered = false
 
-; 右上角点击区域：无 Camera2D 时世界原点在屏幕左上角，room.jpg 只有右下象限可见 (0~1000, 0~648)
-; Area2D 放在可见区域的右上角
-[node name="ExitToDeprecatedHouse" type="Area2D" parent="." unique_id=100000001]
-position = Vector2(850, 150)
+[node name="FrontDoorArea" type="Area2D" parent="." unique_id=1533651303]
+position = Vector2(864, 48)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitToDeprecatedHouse" unique_id=100000002]
-shape = SubResource("rect_exit_1")
-
-[connection signal="input_event" from="ExitToDeprecatedHouse" to="." method="_on_exit_to_deprecated_house_input_event"]
+[node name="FrontDoorCollision" type="CollisionPolygon2D" parent="FrontDoorArea" unique_id=818359073]
+position = Vector2(-56, 256)
+polygon = PackedVector2Array(88, -144, 152, -112, 152, 40, 88, 0)

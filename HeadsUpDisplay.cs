@@ -18,6 +18,6 @@ public partial class HeadsUpDisplay : CanvasLayer
 		GetNode<Control>("WelcomePageVLayout").Hide();
 
 		// 委托给 Main 统一管理开始游戏逻辑（读取 StartPosition、启动玩家等）
-		((Main)GetParent()).NewGame();
+		GetParent<Main>().NewGame();
 	}
 }
