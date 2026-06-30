@@ -3,6 +3,11 @@
 [ext_resource type="Script" uid="uid://c7k2nax4b6p8q" path="res://BornRoom.cs" id="2_bornroom"]
 [ext_resource type="Texture2D" uid="uid://d1rkg032ak45g" path="res://asserts/BornRoom.jpg" id="2_nripk"]
 
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_nripk"]
+vertices = PackedVector2Array(454.52344, 323.03125, 459.09375, 326.07813, 414.3672, 345.25, 388.85156, 344.92188, 294, 582.77344, 156.27344, 504.0703, 269.60938, 440.3203, 294, 569.8203, 682, 218.20313, 682, 216.65625, 785.3281, 271.77344, 738, 250.20313, 841.03906, 291.3203, 891.2031, 312.8203, 972.64844, 367.1172, 702, 514.0469, 813.6797, 309.5703, 738, 294.59375, 702, 528.78906, 674, 538.1172, 674, 506.64844, 310, 561.8203, 310, 523.8594, 413.65625, 357.60938, 341.78906, 492.0703, 578.0703, 495.78906, 515.53125, 527.0625, 471.6797, 548.97656, 420.0625, 526.8594, 535.6875, 427.34375, 597.2969, 476.5625, 625.6328, 486, 599.27344, 395.53125, 624, 412.02344, 643.03125, 486, 682, 318.59375, 682, 373.35156)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 5, 6, 7), PackedInt32Array(8, 9, 10, 11), PackedInt32Array(12, 13, 14, 15, 16), PackedInt32Array(17, 11, 10, 16), PackedInt32Array(18, 19, 20, 15), PackedInt32Array(21, 7, 6, 22), PackedInt32Array(23, 24, 22, 6, 3, 2), PackedInt32Array(25, 26, 27, 28, 24, 23, 29, 30), PackedInt32Array(31, 30, 29, 32, 33, 34), PackedInt32Array(35, 17, 16, 15, 36), PackedInt32Array(34, 33, 36, 15, 20)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(136, 504, 304, 600, 304, 576, 320, 568, 320, 528, 344, 504, 416, 536, 472, 560, 520, 536, 584, 504, 600, 488, 624, 496, 640, 496, 664, 512, 664, 552, 712, 536, 712, 520, 992, 368, 896, 304, 840, 280, 816, 296, 792, 264, 672, 200, 672, 224, 728, 256, 728, 288, 672, 312, 672, 368, 624, 400, 600, 384, 536, 416, 424, 352, 480, 328, 456, 312, 384, 336, 264, 432)])
+
 [node name="BornRoom" type="Node2D" unique_id=77420351]
 script = ExtResource("2_bornroom")
 
@@ -18,3 +23,6 @@ position = Vector2(864, 48)
 [node name="FrontDoorCollision" type="CollisionPolygon2D" parent="FrontDoorArea" unique_id=818359073]
 position = Vector2(-56, 256)
 polygon = PackedVector2Array(88, -144, 152, -112, 152, 40, 88, 0)
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="." unique_id=439044036]
+navigation_polygon = SubResource("NavigationPolygon_nripk")

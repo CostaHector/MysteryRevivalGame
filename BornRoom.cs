@@ -20,11 +20,27 @@ public partial class BornRoom : Node2D {
 			_isMoving = true;
 
 			var player = GetParent<Main>().GetNode<MySprite2D>("MySprite2D");
-			var doorPos = GetNode<Area2D>("FrontDoorArea").GlobalPosition;
+			// 用 FrontDoorCollision 的 polygon AABB 中心作为目标点
+			// （FrontDoorArea.GlobalPosition 是 Area2D 节点坐标，不一定在门上）
+			var doorPos = GetDoorCenter();
 
 			player.ArrivedAtTarget += OnPlayerArrivedAtDoor;
 			player.MoveTo(doorPos);
 		}
+	}
+
+	// 计算 FrontDoorCollision 的 polygon AABB 中心（世界坐标）
+	private Vector2 GetDoorCenter() {
+		var collision = GetNode<CollisionPolygon2D>("FrontDoorArea/FrontDoorCollision");
+		var poly = collision.Polygon;
+		Vector2 min = poly[0];
+		Vector2 max = poly[0];
+		foreach (var v in poly) {
+			min = new Vector2(Mathf.Min(min.X, v.X), Mathf.Min(min.Y, v.Y));
+			max = new Vector2(Mathf.Max(max.X, v.X), Mathf.Max(max.Y, v.Y));
+		}
+		Vector2 localCenter = (min + max) / 2;
+		return collision.ToGlobal(localCenter);
 	}
 
 	// 玩家走到门口后切换场景
