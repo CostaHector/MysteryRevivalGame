@@ -25,10 +25,6 @@ public partial class PlayerSprite : Sprite2D {
 	// 寻路时是否要转向下一个中间点， PathDesiredDistance
 	// 寻路时是否到达终点依据： TargetDesiredDistance
 
-	// 起始位置待吸附：导航地图首次同步前无法查询，需在 _Process 中等待就绪
-	private bool _isStartPending = false;
-	private Vector2 _pendingStartPos;
-
 	// 判断导航地图是否已完成首次同步 && 至少有一个 NavigationRegion2D 注册（可安全查询）
 	private bool IsNavReady() {
 		if (!_navMap.IsValid) return false;
@@ -58,7 +54,18 @@ public partial class PlayerSprite : Sprite2D {
 		// 获取所属 World2D 的导航地图，供 WASD 校验使用
 		_navMap = GetWorld2D().NavigationMap;
 
-		Start(StartPosition.Position);
+		Start(GetReachableStartPosition());
+	}
+
+	// 获取起始可达位置：直接从场景中的 NavigationRegion2D 抽取一个顶点（同步、保证可达），
+	// 避免 NavigationServer2D.MapGetClosestPoint 在 mesh 首次同步前返回 (0,0) 导致的异步等待。
+	// 找不到 NavigationRegion2D 时回落到 StartPosition.Position。
+	private Vector2 GetReachableStartPosition() {
+		var navRegion = GetParent()?.FindChild("NavigationRegion2D", true, false) as NavigationRegion2D;
+		if (navRegion?.NavigationPolygon?.Vertices.Length > 0) {
+			return navRegion.ToGlobal(navRegion.NavigationPolygon.Vertices[0]);
+		}
+		return StartPosition.Position;
 	}
 
 	// 判断坐标是否落在可行走区域（导航网格）内
@@ -106,19 +113,6 @@ public partial class PlayerSprite : Sprite2D {
 	}
 
 	public override void _Process(double delta) {
-		// 导航地图首次同步完成且 region 已注册后，将起始位置吸附到最近可行走点
-		if (_isStartPending && IsNavReady()) {
-			Vector2 closest = NavigationServer2D.MapGetClosestPoint(_navMap, _pendingStartPos);
-			// region 已注册但 navigation mesh 可能还未构建：此时 MapGetClosestPoint 返回 (0,0)
-			// 若 _pendingStartPos 远离原点但返回原点，说明 mesh 还未就绪，继续等待下一次 iteration
-			if (closest == Vector2.Zero && _pendingStartPos.DistanceTo(Vector2.Zero) > 10.0f) {
-				return;
-			}
-			Position = closest;
-			_isStartPending = false;
-			GD.Print($"导航地图首次同步已完成 起始位置吸附: {Position}");
-		}
-
 		// 自动寻路中
 		if (IsNeedAutoNavigate()) {
 			ProcessAutoNavigate((float)delta);
@@ -139,16 +133,7 @@ public partial class PlayerSprite : Sprite2D {
 	public void Start(Vector2 position)
 	{
 		GD.Print($"Start position: {position}");
-		// 导航地图首次同步前查询会失败，先用原始位置占位，等 _Process 检测到就绪后再吸附
-		if (IsNavReady()) {
-			Position = NavigationServer2D.MapGetClosestPoint(_navMap, position);
-			GD.Print($"起始位置吸附: {Position}");
-		} else {
-			Position = position;
-			_pendingStartPos = position;
-			_isStartPending = true;
-			GD.Print($"起始位置待吸附（导航地图未同步）: {position}");
-		}
+		Position = position;
 		Show();
 	}
 }
