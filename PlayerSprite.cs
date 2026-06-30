@@ -5,6 +5,9 @@ using System.Reflection.Metadata.Ecma335;
 public partial class PlayerSprite : Sprite2D {
 	public int Speed { get; set; } = 400;
 
+	// 是否允许移动（背包打开时设为 false，禁用 WASD 和自动寻路；但不暂停游戏，NPC 仍可攻击）
+	public bool CanMove { get; set; } = true;
+
 	public Marker2D StartPosition { get; set; } = new() { Position = new Vector2(500, 200)};
 
 	[Signal]
@@ -40,9 +43,12 @@ public partial class PlayerSprite : Sprite2D {
 	public override void _Ready() {
 		Name = "PlayerSprite";
 		Texture = GD.Load<Texture2D>("res://asserts/player_inital_256_height.png");
+		// 缩放为原始尺寸的一半
+		Scale = new Vector2(0.5f, 0.5f);
 
 		// 让脚（底边中心）作为 Position 判定点：sprite 几何中心向上偏移半个图高
 		// 这样 Position 即脚的位置，吸附导航网格时脚贴地而非中心贴地
+		// Offset 在纹理像素坐标系中应用，会被 Scale 一起缩放，所以脚依然贴在 Position 上
 		Offset = new Vector2(0, -Texture.GetHeight() / 2);
 
 		_navAgent = new NavigationAgent2D {
@@ -113,6 +119,9 @@ public partial class PlayerSprite : Sprite2D {
 	}
 
 	public override void _Process(double delta) {
+		// 背包打开时禁用所有移动（WASD + 自动寻路），但不影响游戏逻辑（NPC 攻击等）
+		if (!CanMove) return;
+
 		// 自动寻路中
 		if (IsNeedAutoNavigate()) {
 			ProcessAutoNavigate((float)delta);
