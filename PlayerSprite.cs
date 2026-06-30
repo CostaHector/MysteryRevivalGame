@@ -1,9 +1,8 @@
 using Godot;
 using System;
 
-public partial class MySprite2D : Sprite2D {
+public partial class PlayerSprite : Sprite2D {
 	public int Speed { get; set; } = 400;
-	public float AngularSpeed { get; set; } = Mathf.Pi;
 
 	public Marker2D StartPosition { get; set; } = new() { Position = new Vector2(500, 200)};
 
@@ -30,12 +29,12 @@ public partial class MySprite2D : Sprite2D {
 		return NavigationServer2D.MapGetRegions(_navMap).Count > 0;
 	}
 
-	public MySprite2D() {
-		GD.Print("Hello world! MySprite2D");
+	public PlayerSprite() {
+		GD.Print("Hello world! PlayerSprite");
 	}
 
 	public override void _Ready() {
-		Name = "MySprite2D";
+		Name = "PlayerSprite";
 		Texture = GD.Load<Texture2D>("res://asserts/player_inital_256_height.png");
 
 		// 让脚（底边中心）作为 Position 判定点：sprite 几何中心向上偏移半个图高
@@ -66,6 +65,16 @@ public partial class MySprite2D : Sprite2D {
 	public void MoveTo(Vector2 target) {
 		_navAgent.TargetPosition = target;
 		_isMoving = true;
+	}
+
+	// returnValue: Need move?
+	public static bool IsNeedMoveToDestination(Vector2 positionBefore, Vector2 direction, int speedValue, float timePeriod, out Vector2 positionAfter) {
+		positionAfter = positionBefore;
+		if (direction == Vector2.Zero || speedValue == 0) {
+			return false;
+		}
+		positionAfter += direction * speedValue * timePeriod;
+		return true;
 	}
 
 	public override void _Process(double delta) {
@@ -102,22 +111,15 @@ public partial class MySprite2D : Sprite2D {
 			return;
 		}
 
-		// WASD 手动移动（受导航网格约束，离地则回滚）
-		Vector2 oldPos = Position;
-		if (Input.IsActionPressed("move_left")) {
-			Position = Position with { X = Position.X - Speed * (float)delta };
-		} else if (Input.IsActionPressed("move_right")) {
-			Position = Position with { X = Position.X + Speed * (float)delta };
-		} else if (Input.IsActionPressed("move_up")) {
-			Position = Position with { Y = Position.Y - Speed * (float)delta };
-		} else if (Input.IsActionPressed("move_down")) {
-			Position = Position with { Y = Position.Y + Speed * (float)delta };
+		// WASD按键控制角色移动
+		Vector2 destinationPos = Vector2.Zero;
+		if (!IsNeedMoveToDestination(Position, Input.GetVector("move_left", "move_right", "move_up", "move_down"), Speed, (float)delta, out destinationPos)) {
+			return;
 		}
-
-		// 移动后校验：新位置若离开地面（不在可行走容差内），回滚到原位置
-		if (Position != oldPos && !IsWalkable(Position)) {
-			Position = oldPos;
+		if (!IsWalkable(destinationPos)) {
+			return;
 		}
+		Position = destinationPos;
 	}
 
 	public void Start(Vector2 position)

@@ -46,7 +46,7 @@ public partial class Main : Node {
 		AddChild(bornRoom);
 
 		// 动态创建 MySprite2D（玩家）
-		var player = new MySprite2D();
+		var player = new PlayerSprite();
 		AddChild(player);
 	}
 }

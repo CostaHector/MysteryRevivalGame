@@ -19,7 +19,7 @@ public partial class BornRoom : Node2D {
 			&& mouseEvent.ButtonIndex == MouseButton.Left) {
 			_isMoving = true;
 
-			var player = GetParent<Main>().GetNode<MySprite2D>("MySprite2D");
+			var player = GetParent<Main>().GetNode<PlayerSprite>("PlayerSprite");
 			// 用 FrontDoorCollision 的 polygon AABB 中心作为目标点
 			// （FrontDoorArea.GlobalPosition 是 Area2D 节点坐标，不一定在门上）
 			var doorPos = GetDoorCenter();

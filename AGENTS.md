@@ -18,16 +18,16 @@ Project guidance for AI agents working in this repository.
 project.godot          # Engine config: app name, main scene, input map, rendering
 GhostDomain.sln        # Visual Studio solution
 GhostDomain.csproj     # Godot .NET project (Godot.NET.Sdk 4.7.0)
-MySprite2D.tscn        # Main scene (uid://b5a6eepb053qw), root node MySprite2D
-MySprite2D.cs          # Script for the root Sprite2D; handles WASD movement
+PlayerSprite.tscn        # Main scene (uid://b5a6eepb053qw), root node PlayerSprite
+PlayerSprite.cs          # Script for the root Sprite2D; handles WASD movement
 icon.svg               # Default project icon (used as the sprite texture)
 .godot/                # Engine-generated cache (gitignored, do not edit)
 ```
 
 ## Main Scene & Entry Point
 
-- The main scene is `MySprite2D.tscn` (referenced by `run/main_scene` in `project.godot`).
-- The root node `MySprite2D` (type `Sprite2D`) loads `MySprite2D.cs` and uses `icon.svg` as its texture.
+- The main scene is `PlayerSprite.tscn` (referenced by `run/main_scene` in `project.godot`).
+- The root node `PlayerSprite` (type `Sprite2D`) loads `PlayerSprite.cs` and uses `icon.svg` as its texture.
 
 ## Input Map
 
@@ -44,7 +44,7 @@ Defined in `project.godot` under `[input]`. All actions use a 0.2 deadzone and p
 
 - C# files use `using Godot;` and `using System;` at the top.
 - Node-derived classes are `public partial class` (required for Godot C# scripting).
-- Public tunable properties use PascalCase (e.g., `Speed`, `AngularSpeed`).
+- Public tunable properties use PascalCase (e.g., `Speed`).
 - `Mathf.Pi` and other Godot math helpers are preferred over `System.Math`.
 - Comments are written in Chinese (match this when editing existing code).
 - Use `Position with { X = ... }` style record-init for `Vector2` updates.
@@ -65,4 +65,4 @@ Defined in `project.godot` under `[input]`. All actions use a 0.2 deadzone and p
 - Prefer editing existing files over creating new ones.
 - Do not commit anything under `.godot/` — it is engine-generated.
 - When adding scripts, register them via the editor or attach to a node in a `.tscn`; do not hand-edit UIDs.
-- Keep the C# code consistent with the existing style in `MySprite2D.cs`.
+- Keep the C# code consistent with the existing style in `PlayerSprite.cs`.
