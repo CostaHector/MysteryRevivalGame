@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Reflection.Metadata.Ecma335;
 
 public partial class PlayerSprite : Sprite2D {
 	public int Speed { get; set; } = 400;
@@ -9,19 +10,26 @@ public partial class PlayerSprite : Sprite2D {
 	[Signal]
 	public delegate void ArrivedAtTargetEventHandler();
 
-	private NavigationAgent2D _navAgent;
+	private bool IsNeedAutoNavigate() => _isMoving;
+	private void SetNavigateStart() => _isMoving = true;
+	private void SetNavigateFinished() => _isMoving = false;
 	private bool _isMoving = false;
+
 	// 当前 World2D 的导航地图 RID，用于 MapGetClosestPoint 校验可行走区域
+	private NavigationAgent2D _navAgent;
 	private Rid _navMap;
 
-	// 判定坐标是否在地面上的容差（与 PathDesiredDistance 一致）
-	private const float WalkTolerance = 4.0f;
+
+	// 移动时是否在可访问区域内
+	private const float WalkTolerance = 8.0f;	
+	// 寻路时是否要转向下一个中间点， PathDesiredDistance
+	// 寻路时是否到达终点依据： TargetDesiredDistance
 
 	// 起始位置待吸附：导航地图首次同步前无法查询，需在 _Process 中等待就绪
 	private bool _isStartPending = false;
 	private Vector2 _pendingStartPos;
 
-	// 判断导航地图是否已完成首次同步且至少有一个 NavigationRegion2D 注册（可安全查询）
+	// 判断导航地图是否已完成首次同步 && 至少有一个 NavigationRegion2D 注册（可安全查询）
 	private bool IsNavReady() {
 		if (!_navMap.IsValid) return false;
 		if (NavigationServer2D.MapGetIterationId(_navMap) == 0) return false;
@@ -64,17 +72,37 @@ public partial class PlayerSprite : Sprite2D {
 	// 设置导航目标，沿可行走区域自动寻路
 	public void MoveTo(Vector2 target) {
 		_navAgent.TargetPosition = target;
-		_isMoving = true;
+		SetNavigateStart();
 	}
 
 	// returnValue: Need move?
-	public static bool IsNeedMoveToDestination(Vector2 positionBefore, Vector2 direction, int speedValue, float timePeriod, out Vector2 positionAfter) {
-		positionAfter = positionBefore;
-		if (direction == Vector2.Zero || speedValue == 0) {
+	public bool IsNeedMoveToDestination(Vector2 direction, float timePeriod, out Vector2 positionAfter) {
+		positionAfter = Position;
+		if (direction == Vector2.Zero || Speed == 0) {
 			return false;
 		}
-		positionAfter += direction * speedValue * timePeriod;
+		positionAfter += direction * Speed * timePeriod;
 		return true;
+	}
+
+	// return: true if auto navigate needed
+	private void ProcessAutoNavigate(float timePeriod) {
+		if (_navAgent.IsNavigationFinished()) {
+			SetNavigateFinished();
+			EmitSignal(SignalName.ArrivedAtTarget);
+			return;
+		}
+
+		Vector2 nextPos = _navAgent.GetNextPathPosition();
+		float distance1Step = Speed * timePeriod;
+		if (Position.DistanceTo(nextPos) <= distance1Step) { // 一步能到目标点， 直接到达
+			Position = nextPos;
+			return;
+		}
+
+		// 一步不能到目标点， 向目标点方向移动
+		Vector2 direction = (nextPos - Position).Normalized();
+		Position += direction * distance1Step;
 	}
 
 	public override void _Process(double delta) {
@@ -92,28 +120,14 @@ public partial class PlayerSprite : Sprite2D {
 		}
 
 		// 自动寻路中
-		if (_isMoving) {
-			if (_navAgent.IsNavigationFinished()) {
-				_isMoving = false;
-				EmitSignal(SignalName.ArrivedAtTarget);
-				return;
-			}
-
-			Vector2 nextPos = _navAgent.GetNextPathPosition();
-			Vector2 direction = (nextPos - Position).Normalized();
-			float step = Speed * (float)delta;
-
-			if (Position.DistanceTo(nextPos) <= step) {
-				Position = nextPos;
-			} else {
-				Position += direction * step;
-			}
+		if (IsNeedAutoNavigate()) {
+			ProcessAutoNavigate((float)delta);
 			return;
 		}
 
 		// WASD按键控制角色移动
 		Vector2 destinationPos = Vector2.Zero;
-		if (!IsNeedMoveToDestination(Position, Input.GetVector("move_left", "move_right", "move_up", "move_down"), Speed, (float)delta, out destinationPos)) {
+		if (!IsNeedMoveToDestination(Input.GetVector("move_left", "move_right", "move_up", "move_down"), (float)delta, out destinationPos)) {
 			return;
 		}
 		if (!IsWalkable(destinationPos)) {
