@@ -45,17 +45,17 @@ public partial class Main : Node {
 		var bornRoom = bornRoomScene.Instantiate<BornRoom>();
 		AddChild(bornRoom);
 
-		var playerInteractDisplayScene = GD.Load<PackedScene>("res://PlayerInteractDisplay.tscn");
-		var playerInteractDisplay = playerInteractDisplayScene.Instantiate<CanvasLayer>();
-		AddChild(playerInteractDisplay);
-
-		// 动态创建 MySprite2D（玩家）
+		// 动态创建 玩家
 		var player = new PlayerSprite();
 		AddChild(player);
 
+		// 动态创建 玩家交互	
+		PlayerInteractDisplay playerInteractDisplay = new();
+		AddChild(playerInteractDisplay);
+
 		// 实例化背包（常驻，用 Visible 控制显隐；layer=10 盖在 HUD 之上）
 		var backpackScene = GD.Load<PackedScene>("res://Backpack.tscn");
-		var backpack = backpackScene.Instantiate<CanvasLayer>();
+		var backpack = backpackScene.Instantiate<Backpack>();
 		AddChild(backpack);
 	}
 }

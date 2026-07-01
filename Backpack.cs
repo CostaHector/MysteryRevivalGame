@@ -20,12 +20,12 @@ public partial class Backpack : CanvasLayer {
 	// 创建一个格子：Panel → MarginContainer → TextureRect → itemCount
 	// 结构与 PlayerInteractDisplay 中的 Slot 保持一致
 	private Panel CreateSlot(int index) {
-		var slot = new Panel {
+		Panel slot = new(){
 			Name = $"Slot{index}",
 			CustomMinimumSize = new Vector2(SlotSize, SlotSize)
 		};
 
-		var margin = new MarginContainer();
+		MarginContainer margin = new();
 		margin.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 		slot.AddChild(margin);
 
