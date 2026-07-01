@@ -5,13 +5,44 @@ public partial class Backpack : CanvasLayer {
 	private bool _isOpen = false;
 	private PlayerSprite _player;
 
-	private const int SlotCount = 36;
-	private const int Columns = 9;
-	private const float SlotSize = 64.0f;
+	private const int SLOT_COUNT = 36;
+	private const int COLUMNS = 9;
+	private const float SLOT_SIZE = 64.0f;
 
 	public override void _Ready() {
-		var grid = GetNode<GridContainer>("BackpackPanel/GridContainer");
-		for (int i = 0; i < SlotCount; i++) {
+		// 背包背景：半透明黑色蒙层（拦截背包外点击）
+		var dimOverlay = new ColorRect {
+			Name = "DimOverlay",
+			Color = new Color(0, 0, 0, 0.4f)
+		};
+		dimOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		AddChild(dimOverlay);
+
+		Panel backpackPanel = new(){
+			Name = "BackpackPanel",
+			OffsetLeft = -320.0f,
+			OffsetTop = -150.0f,
+			OffsetRight = 320.0f,
+			OffsetBottom = 150.0f,
+		};
+		backpackPanel.SetAnchorsPreset(Control.LayoutPreset.Center);
+		AddChild(backpackPanel);
+
+
+		GridContainer grid = new () {
+			Name = "GridContainer",
+			Columns = Backpack.COLUMNS,
+			OffsetLeft = 16.0f,
+			OffsetTop = 16.0f,
+			OffsetRight = -16.0f,
+			OffsetBottom = -16.0f,
+		};
+		grid.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		grid.AddThemeConstantOverride("h_separation", 4);
+		grid.AddThemeConstantOverride("v_separation", 4);
+		backpackPanel.AddChild(grid);
+
+		for (int i = 0; i < Backpack.SLOT_COUNT; i++) {
 			grid.AddChild(CreateSlot(i + 1));
 		}
 		Hide();
@@ -22,26 +53,41 @@ public partial class Backpack : CanvasLayer {
 	private Panel CreateSlot(int index) {
 		Panel slot = new(){
 			Name = $"Slot{index}",
-			CustomMinimumSize = new Vector2(SlotSize, SlotSize)
+			CustomMinimumSize = new Vector2(SLOT_SIZE, SLOT_SIZE)
 		};
+
+		// no Need set StyleBoxFlat
 
 		MarginContainer margin = new();
 		margin.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		margin.AddThemeConstantOverride("margin_left", 4);
+		margin.AddThemeConstantOverride("margin_right", 4);
+		margin.AddThemeConstantOverride("margin_top", 4);
+		margin.AddThemeConstantOverride("margin_bottom", 4);
 		slot.AddChild(margin);
 
-		var texture = new TextureRect {
-			Texture = GD.Load<Texture2D>("res://icon.svg"),
+		// 图标（拉伸填充 MarginContainer，保持宽高比居中）
+		TextureRect icon = new () {
+			Name = $"Icon{index}",
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
 		};
-		margin.AddChild(texture);
+		margin.AddChild(icon);
 
-		// 数量标签，定位在 TextureRect 右下角
-		var countLabel = new Label { Text = "0" };
-		countLabel.SetAnchorsPreset(Control.LayoutPreset.BottomRight);
-		countLabel.OffsetLeft = -24;
-		countLabel.OffsetTop = -23;
-		texture.AddChild(countLabel);
+		// 数量标签（覆盖层，锚定铺满，文字右对齐、下对齐 → 右下角效果）
+		Label label = new();
+		label.Name = $"Count{index}";
+		label.Text = "0";
+		label.HorizontalAlignment = HorizontalAlignment.Right;
+		label.VerticalAlignment = VerticalAlignment.Bottom;
+		label.AddThemeColorOverride("font_color", Colors.White);
+		label.AddThemeFontSizeOverride("font_size", 12);
+		label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		label.OffsetLeft = 2;
+		label.OffsetTop = 2;
+		label.OffsetRight = -2;
+		label.OffsetBottom = -2;
+		slot.AddChild(label);
 
 		return slot;
 	}

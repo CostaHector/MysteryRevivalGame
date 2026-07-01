@@ -1,36 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://b1h0qxrth3vtt"]
 
-[ext_resource type="Script" path="res://Backpack.cs" id="1_backpack"]
+[ext_resource type="Script" uid="uid://caljjgwmbex22" path="res://Backpack.cs" id="1_backpack"]
 
-[node name="Backpack" type="CanvasLayer"]
+[node name="Backpack" type="CanvasLayer" unique_id=1189329698]
 layer = 10
 script = ExtResource("1_backpack")
-
-[node name="DimOverlay" type="ColorRect" parent="."]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.4)
-
-[node name="BackpackPanel" type="Panel" parent="."]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -150.0
-offset_right = 320.0
-offset_bottom = 150.0
-
-[node name="GridContainer" type="GridContainer" parent="BackpackPanel"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = -16.0
-offset_bottom = -16.0
-columns = 9
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
