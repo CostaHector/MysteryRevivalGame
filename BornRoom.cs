@@ -5,8 +5,10 @@ public partial class BornRoom : Node2D {
 	private bool _isMoving = false;
 
 	public override void _Ready() {
-		// 连接前门 Area2D 的点击信号
+		// 连接前门 Area2D 的鼠标悬停和点击信号
 		var exitArea = GetNode<Area2D>("FrontDoorArea");
+		exitArea.MouseEntered += () => Input.SetDefaultCursorShape(Input.CursorShape.PointingHand);
+		exitArea.MouseExited += () => Input.SetDefaultCursorShape(Input.CursorShape.Arrow);
 		exitArea.InputEvent += _on_exit_to_deprecated_house_input_event;
 	}
 
@@ -17,6 +19,7 @@ public partial class BornRoom : Node2D {
 		if (@event is InputEventMouseButton mouseEvent
 			&& mouseEvent.Pressed
 			&& mouseEvent.ButtonIndex == MouseButton.Left) {
+			Input.SetDefaultCursorShape(Input.CursorShape.Arrow);
 			_isMoving = true;
 
 			var player = GetParent<Main>().GetNode<PlayerSprite>("PlayerSprite");
