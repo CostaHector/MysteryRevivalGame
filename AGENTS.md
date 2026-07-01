@@ -1,68 +1,63 @@
 # AGENTS.md
 
-Project guidance for AI agents working in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-**GhostDomain** is a Godot 4.7 game project written in C# (.NET 8.0). It is in an early stage with a single playable scene containing a movable Sprite2D.
+**神秘复苏 (Mystery Revival)** — a 2D game built in **Godot 4.7** with **C# (.NET 8.0)**. Internal assembly/solution name is `GhostDomain`. Renderer is Forward+ (D3D12 on Windows); 3D physics uses Jolt.
 
-- Engine: Godot 4.7 (Forward+ renderer, D3D12 on Windows)
-- Language: C# via Godot.NET.Sdk 4.7.0
-- Target frameworks: `net8.0` (desktop), `net9.0` (Android)
-- Physics: Jolt Physics (3D)
-- Window stretch: `canvas_items` mode, `expand` aspect
-
-## Repository Layout
-
-```
-project.godot          # Engine config: app name, main scene, input map, rendering
-GhostDomain.sln        # Visual Studio solution
-GhostDomain.csproj     # Godot .NET project (Godot.NET.Sdk 4.7.0)
-PlayerSprite.tscn        # Main scene (uid://b5a6eepb053qw), root node PlayerSprite
-PlayerSprite.cs          # Script for the root Sprite2D; handles WASD movement
-icon.svg               # Default project icon (used as the sprite texture)
-.godot/                # Engine-generated cache (gitignored, do not edit)
-```
-
-## Main Scene & Entry Point
-
-- The main scene is `PlayerSprite.tscn` (referenced by `run/main_scene` in `project.godot`).
-- The root node `PlayerSprite` (type `Sprite2D`) loads `PlayerSprite.cs` and uses `icon.svg` as its texture.
-
-## Input Map
-
-Defined in `project.godot` under `[input]`. All actions use a 0.2 deadzone and physical keycodes:
-
-| Action      | Key | physical_keycode |
-|-------------|-----|------------------|
-| `move_up`    | W   | 87               |
-| `move_down`  | S   | 83               |
-| `move_left`  | A   | 65               |
-| `move_right` | D   | 68               |
-
-## Code Conventions
-
-- C# files use `using Godot;` and `using System;` at the top.
-- Node-derived classes are `public partial class` (required for Godot C# scripting).
-- Public tunable properties use PascalCase (e.g., `Speed`).
-- `Mathf.Pi` and other Godot math helpers are preferred over `System.Math`.
-- Comments are written in Chinese (match this when editing existing code).
-- Use `Position with { X = ... }` style record-init for `Vector2` updates.
+- Window: 1024×768, `canvas_items` stretch, `expand` aspect.
+- Target frameworks: `net8.0` desktop, `net9.0` for Android (`GodotTargetPlatform == android`).
 
 ## Build & Run
 
-- Open the project in the Godot 4.7 editor (the .NET sdk is configured in `GhostDomain.csproj`).
-- Build the C# solution from the editor (`Build` button) or via `dotnet build GhostDomain.csproj`.
-- Run from the editor (F5) or `godot --path .` with the .NET-enabled editor build.
-- Build outputs land in `.godot/mono/temp/bin/Debug/` (gitignored).
+- Open in the Godot 4.7 **.NET/Mono** editor build; press F5 to run, or use the editor's Build button.
+- CLI build: `dotnet build GhostDomain.csproj`. Build outputs land in `.godot/mono/temp/bin/` (gitignored).
+- CLI run: `godot --path .` (requires a .NET-enabled Godot binary on PATH).
+- No test suite, linter, or CI is configured.
+- `addons/godot_mcp/` is a third-party MCP-server plugin — do not treat it as game code.
 
-## Gitignore Notes
+## Architecture: code-first, Main.cs as hub
 
-`.godot/` and `android/` are ignored. Source-of-truth files are `*.godot`, `*.cs`, `*.tscn`, `*.csproj`, `*.sln`, `*.svg`, and `*.import` metadata.
+The defining convention of this codebase: **the scene tree is built almost entirely in C# `_Ready()` methods, not in `.tscn` files.** The `.tscn` files are intentionally minimal — most nodes (sprites, cameras, UI, players) are `new`'d and `AddChild`'d at runtime. When adding features, follow this pattern rather than building rich scenes in the editor.
 
-## Working With This Project
+Two exceptions carry real scene data and *are* edited in the editor:
+- `BornRoom.tscn` — holds the `NavigationPolygon` (walkable area), `FrontDoorArea` (Area2D + CollisionPolygon2D), and `Background`.
+- `HeadsUpDisplay.tscn` — the welcome/title screen with the wired `StartButton` signal.
 
-- Prefer editing existing files over creating new ones.
-- Do not commit anything under `.godot/` — it is engine-generated.
-- When adding scripts, register them via the editor or attach to a node in a `.tscn`; do not hand-edit UIDs.
-- Keep the C# code consistent with the existing style in `PlayerSprite.cs`.
+### Runtime flow
+
+1. **`Main.tscn`** (`uid://c64n8jijvjwc`) is the entry scene → root node runs `Main.cs`.
+2. `Main._Ready()` builds the cover background + `Camera2D`, then instantiates `HeadsUpDisplay.tscn` (title screen).
+3. `HeadsUpDisplay` StartButton → `_on_start_button_button_down()` → hides itself, calls `Main.NewGame()`.
+4. `Main.NewGame()` hides the cover and instantiates the gameplay nodes as children of `Main`: `BornRoom` (from tscn), `PlayerSprite`, `PlayerInteractDisplay`, `Backpack`.
+5. **Scene transitions** swap sibling nodes under `Main` while keeping the player/HUD: `BornRoom.GotoDeprecatedHouse()` adds a `DeprecatedHouse` node and `QueueFree()`s itself.
+
+Because everything hangs off `Main`, cross-node lookups use `GetParent<Main>().GetNode<PlayerSprite>("PlayerSprite")`. Node **names are load-bearing** — nodes set `Name` explicitly in `_Ready()` (e.g. `"PlayerSprite"`, `"CoverBackground"`) and other nodes fetch by that string. Renaming a node means updating its lookups.
+
+### Key nodes
+
+- **`PlayerSprite`** (`Sprite2D`) — WASD movement *and* click-to-move auto-navigation via a child `NavigationAgent2D`. Movement is gated by `CanMove` (set false while the backpack is open — game is *not* paused, so NPCs could still act). `_navMap` is validated with `IsNavReady()` before querying, because `NavigationServer2D` returns `(0,0)` until the map's first sync completes and a region is registered. `Offset` shifts the sprite so `Position` = the character's feet (for navmesh snapping). Emits `ArrivedAtTarget` when auto-nav finishes.
+- **`BornRoom`** (`Node2D`) — wires `FrontDoorArea` hover/click; on click, moves the player to the door center (computed from the collision polygon AABB, *not* the Area2D position) and transitions on `ArrivedAtTarget`.
+- **`PlayerInteractDisplay`** (`CanvasLayer`) — top status bar + bottom 1×9 hotbar, built entirely in code. Mouse wheel changes the selected slot.
+- **`Backpack`** (`CanvasLayer`) — 9×4 grid, toggled by `open_backpack`/`exit`; always resident, shown/hidden via `Visible`.
+- **`DeprecatedHouse`** (`Node2D`) — second location, background-only so far.
+
+## Input Map (project.godot)
+
+All actions use physical keycodes, 0.2 deadzone: `move_up`=W, `move_down`=S, `move_left`=A, `move_right`=D, `open_backpack`=E, `exit`=Escape.
+
+## Code Conventions
+
+- Node classes are `public partial class : <GodotType>` (required for Godot C# source-gen).
+- `using Godot;` + `using System;` at top; PascalCase for public tunables (e.g. `Speed`).
+- Prefer `Mathf.*` over `System.Math`; prefer Godot idioms (`GD.Load<T>`, `EmitSignal(SignalName.X)`).
+- **Comments are in Chinese** — match this when editing existing code.
+- Assets live in `asserts/` (note the spelling); load with `GD.Load<Texture2D>("res://asserts/...")`.
+
+## Godot Housekeeping
+
+- **Never edit or commit `.godot/`** — engine-generated cache (gitignored, along with `/android/`).
+- Source-of-truth: `*.cs`, `*.tscn`, `project.godot`, `*.csproj`, `*.sln`, `*.svg`, `*.import`.
+- Don't hand-edit `.uid` files or scene `uid://` references; let the editor manage them.
+- When adding a script that needs a scene, either attach it in a `.tscn` or (per this project's style) instantiate it in code from a parent's `_Ready()`.
