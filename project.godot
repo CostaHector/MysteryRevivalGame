@@ -15,6 +15,10 @@ run/main_scene="uid://c64n8jijvjwc"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+MCPRuntimeProbe="*res://addons/godot_mcp/runtime/mcp_runtime_probe.gd"
+
 [display]
 
 window/stretch/mode="canvas_items"
@@ -25,6 +29,10 @@ window/size/height=768
 [dotnet]
 
 project/assembly_name="GhostDomain"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
 [input]
 

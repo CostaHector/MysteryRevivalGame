@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://5w678tjedx7d"
-path="res://.godot/imported/RedGhostCandle128.png-faf8d4b93c1bed8228be2861ec432cf3.ctex"
+uid="uid://f3wcfnsi60l3"
+path="res://.godot/imported/WhiteGhostCandleBurning_128.png-66b9cfa9ebc0f9fbe8ed924e7f82caf8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://asserts/RedGhostCandle128.png"
-dest_files=["res://.godot/imported/RedGhostCandle128.png-faf8d4b93c1bed8228be2861ec432cf3.ctex"]
+source_file="res://asserts/items/WhiteGhostCandleBurning_128.png"
+dest_files=["res://.godot/imported/WhiteGhostCandleBurning_128.png-66b9cfa9ebc0f9fbe8ed924e7f82caf8.ctex"]
 
 [params]
 

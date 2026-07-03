@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://132yf85nsi5"
-path="res://.godot/imported/RedGhostCandleBurning128.png-099eb36ade03585f3fa38f7199a4ee39.ctex"
+uid="uid://coia5dgu82llh"
+path="res://.godot/imported/GoldenSATellitePhone_128.png-c21596621f3a5d25a004271b5c097d72.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://asserts/RedGhostCandleBurning128.png"
-dest_files=["res://.godot/imported/RedGhostCandleBurning128.png-099eb36ade03585f3fa38f7199a4ee39.ctex"]
+source_file="res://asserts/items/GoldenSATellitePhone_128.png"
+dest_files=["res://.godot/imported/GoldenSATellitePhone_128.png-c21596621f3a5d25a004271b5c097d72.ctex"]
 
 [params]
 
