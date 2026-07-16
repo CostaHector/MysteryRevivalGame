@@ -7,7 +7,7 @@ public static class ItemDatabase {
     private static readonly Dictionary<ItemType, ItemData> _items = [];
 
     static ItemDatabase() {
-        Register(new ItemData(ItemType.None, "错误", "", "res://asserts/items/None_64.svg", 1, ComsumeTool.Consume));
+        Register(new ItemData(ItemType.None, "空物品", "res://asserts/items/None_64.svg", "无物品", 1, ComsumeTool.Consume));
         Register(new ItemData(ItemType.RED_GHOST_CANDLE, "红色鬼烛", "res://asserts/items/RedGhostCandle_128.png", 
         """
         外观: 猩红，仿佛由鲜血凝聚而成的蜡烛, 就像古典婚庆时用的红色蜡烛, 点燃后, 鬼火散发出碧绿的光芒;
@@ -52,5 +52,5 @@ public static class ItemDatabase {
     }
 
     private static void Register(ItemData data) => _items[data.Id] = data;
-    public static ItemData Get(ItemType id) => _items.TryGetValue(id, out var d) ? d : _items[ItemType.None];
+    public static ItemData Get(ItemType id) => _items.TryGetValue(id, out var data) ? data : _items[ItemType.None];
 }

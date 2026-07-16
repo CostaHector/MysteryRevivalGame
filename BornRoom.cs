@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using ItemPublic;
 
 public partial class BornRoom : Node2D {
 	private bool _isMoving = false;
@@ -10,6 +11,11 @@ public partial class BornRoom : Node2D {
 		exitArea.MouseEntered += () => Input.SetDefaultCursorShape(Input.CursorShape.PointingHand);
 		exitArea.MouseExited += () => Input.SetDefaultCursorShape(Input.CursorShape.Arrow);
 		exitArea.InputEvent += _on_exit_to_deprecated_house_input_event;
+
+		// 放置测试物品，验证靠近拾取、库存堆叠和右键传播。
+		var worldItem = new WorldItem();
+		worldItem.Configure(ItemDatabase.Get(ItemType.WHITE_GHOST_CANDLE), 3, new Vector2(540, 430));
+		AddChild(worldItem);
 	}
 
 	// 处理前门点击：让玩家走到门口，到达后切换场景

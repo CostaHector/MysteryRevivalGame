@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using ItemPublic;
 
 public partial class Main : Node {
 	// Called when the node enters the scene tree for the first time.
@@ -57,5 +58,13 @@ public partial class Main : Node {
 		var backpackScene = GD.Load<PackedScene>("res://Backpack.tscn");
 		var backpack = backpackScene.Instantiate<Backpack>();
 		AddChild(backpack);
+
+		// 初始化共享库存。快捷栏映射到背包最后一行。
+		var inventory = GameState.Instance.Inventory;
+		inventory.Clear();
+		inventory.SetSlot(GameState.Instance.HotbarToInventory(0),
+			ItemStack.GetABatchOfItems(ItemDatabase.Get(ItemType.RED_GHOST_CANDLE), 1));
+		inventory.SetSlot(GameState.Instance.HotbarToInventory(1),
+			ItemStack.GetABatchOfItems(ItemDatabase.Get(ItemType.REGULAR_PHONE), 1));
 	}
 }

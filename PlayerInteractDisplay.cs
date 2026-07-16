@@ -2,189 +2,175 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
-public partial class PlayerInteractDisplay : CanvasLayer
-{
-	private const int SLOT_COUNT = 9;
-	private const int SLOT_SIZE = 64;
-	private const int SLOT_MARGIN = 4;
-	private const int GAP_BETWEEN_SLOTS = 4;
+public partial class PlayerInteractDisplay : CanvasLayer {
+	private const int SlotCount = GameState.HotbarSize;
+	private const int SlotSize = 64;
+	private const int SlotMargin = 4;
+	private const int GapBetweenSlots = 4;
+	private const int MarginOffset = 12;
 
-	private const int MARGIN_OFFSET = 12;
+	private readonly List<SlotView> _slotViews = [];
+	private InventoryModel _inventory;
+	private Label _feedbackLabel;
+	private int _selectedSlot;
 
-	// 当前选中的槽位
-	private int _selectedSlot = 0;
-	private static Color SLOT_PANEL_BORDER_DEFAULT_BG_COLOR = new(0.05f, 0.05f, 0.05f, 0.85f), SLOT_PANEL_BORDER_SELECTED_BG_COLOR = new(0.15f, 0.15f, 0.15f, 0.85f);
-	private static Color SLOT_PANEL_BORDER_DEFAULT_COLOR = new(0.4f, 0.4f, 0.4f, 1f), SLOT_PANEL_BORDER_SELECTED_COLOR = new(0.8f, 0.8f, 0.8f, 1f);
-	private const int SLOT_PANEL_BORDER_DEFAULT_WIDTH = 1, SLOT_PANEL_BORDER_SELECTED_WIDTH = 3;
-	// 槽位板样式列表
-	private List<StyleBoxFlat> _slotPanelStyleList = new(SLOT_COUNT);
-	private static bool IsSlotValid(int slot) => slot >= 0 && slot < SLOT_COUNT;
+	private sealed class SlotView {
+		public TextureRect Icon { get; init; }
+		public Label Count { get; init; }
+		public StyleBoxFlat Style { get; init; }
+	}
 
-	public override void _Ready()
-	{
+	public override void _Ready() {
 		Name = "PlayerInteractDisplay";
-		BuilderTopStatusHotBar();
+		BuildTopStatusBar();
 		BuildBottomHotbar();
+		_inventory = GameState.Instance.Inventory;
+		_inventory.SlotChanged += OnInventorySlotChanged;
+		RefreshAllSlots();
 		MoveSelectorTo(_selectedSlot);
 	}
 
-	private void BuilderTopStatusHotBar() {
-		HBoxContainer outerHBox = new();
+	public override void _ExitTree() {
+		if (_inventory != null) _inventory.SlotChanged -= OnInventorySlotChanged;
+	}
+
+	private void BuildTopStatusBar() {
+		var outerHBox = new HBoxContainer();
 		outerHBox.SetAnchorsPreset(Control.LayoutPreset.TopWide);
-		outerHBox.OffsetTop = MARGIN_OFFSET;
+		outerHBox.OffsetTop = MarginOffset;
 		outerHBox.AddThemeConstantOverride("separation", 0);
 		AddChild(outerHBox);
 
-		Label healthPointLabel = new() {
-			Text = "血量: 100",
-			CustomMinimumSize = new Vector2(200, -1),
-		};
-		outerHBox.AddChild(healthPointLabel);
-
-		Label mentalStatusLabel = new() {
-			Text = "情绪状态: 正常",
-			CustomMinimumSize = new Vector2(200, -1),
-		};
-		outerHBox.AddChild(mentalStatusLabel);
-
-		Label environmentLabel = new() {
-			Text = "环境: (无)",
-			CustomMinimumSize = new Vector2(200, -1),
-		};
-		outerHBox.AddChild(environmentLabel);
-
-		Label visualRangeLabel = new() {
-			Text = "可视范围: 100m",
-			CustomMinimumSize = new Vector2(200, -1),
-		};
-		outerHBox.AddChild(visualRangeLabel);
-
-		Control rightSpacer = new();
-		rightSpacer.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-		outerHBox.AddChild(rightSpacer);
-	}
-
-	// 构建 1×9 底部物品栏，左右弹簧居中，贴窗口底边
-	private void BuildBottomHotbar()
-	{
-		// 外层 HBox：锚定窗口底部、横向铺满
-		HBoxContainer outerHBox = new();
-		outerHBox.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
-		outerHBox.OffsetTop = -(SLOT_SIZE + MARGIN_OFFSET);   // 从底边向上延伸的高度
-		outerHBox.AddThemeConstantOverride("separation", 0);
-		AddChild(outerHBox);
-
-		// 左侧弹簧
-		Control leftSpacer = new();
-		leftSpacer.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-		outerHBox.AddChild(leftSpacer);
-
-		// 中间 9 个格子
-		GridContainer slotsHBox = new(){ Columns = SLOT_COUNT};
-		slotsHBox.AddThemeConstantOverride("separation", GAP_BETWEEN_SLOTS);
-		outerHBox.AddChild(slotsHBox);
-
-		for (int i = 0; i < SLOT_COUNT; i++)
-		{
-			slotsHBox.AddChild(CreateSlot(i));
+		foreach (string text in new[] { "血量: 100", "情绪状态: 正常", "环境: (无)", "可视范围: 100m" }) {
+			outerHBox.AddChild(new Label { Text = text, CustomMinimumSize = new Vector2(200, -1) });
 		}
+		outerHBox.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
 
-		// 右侧弹簧
-		Control rightSpacer = new();
-		rightSpacer.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-		outerHBox.AddChild(rightSpacer);
-	}
-
-
-	private static void SetSlotPanelStyle(StyleBoxFlat bg, bool isSelected) {
-		bg.BgColor = isSelected ? SLOT_PANEL_BORDER_SELECTED_BG_COLOR : SLOT_PANEL_BORDER_DEFAULT_BG_COLOR;
-		bg.BorderWidthBottom = bg.BorderWidthTop = bg.BorderWidthLeft = bg.BorderWidthRight = isSelected ? SLOT_PANEL_BORDER_SELECTED_WIDTH : SLOT_PANEL_BORDER_DEFAULT_WIDTH;
-		bg.BorderColor = isSelected ? SLOT_PANEL_BORDER_SELECTED_COLOR : SLOT_PANEL_BORDER_DEFAULT_COLOR;
-	}
-
-	// 单个格子：Panel（底框）→ MarginContainer（内边距）→ TextureRect（图标），
-	// Label（数量）覆盖在 MarginContainer 之上、右下角显示
-	private Panel CreateSlot(int index)
-	{
-		// 格子底板
-		Panel slot = new() {
-			Name = $"Slot{index}",
-			CustomMinimumSize = new Vector2(SLOT_SIZE, SLOT_SIZE),
+		_feedbackLabel = new Label {
+			Name = "FeedbackLabel",
+			HorizontalAlignment = HorizontalAlignment.Center,
+			OffsetTop = 42,
+			OffsetBottom = 72
 		};
+		_feedbackLabel.SetAnchorsPreset(Control.LayoutPreset.TopWide);
+		AddChild(_feedbackLabel);
+	}
 
-		// nee set StyleBoxFlat
-		StyleBoxFlat bg = new();
-		SetSlotPanelStyle(bg, false);
-		slot.AddThemeStyleboxOverride("panel", bg);
-		_slotPanelStyleList.Add(bg);
+	private void BuildBottomHotbar() {
+		var outerHBox = new HBoxContainer();
+		outerHBox.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+		outerHBox.OffsetTop = -(SlotSize + MarginOffset);
+		outerHBox.AddThemeConstantOverride("separation", 0);
+		AddChild(outerHBox);
+		outerHBox.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
 
-		// 内边距容器（铺满 slot）
-		MarginContainer margin = new();
+		var grid = new GridContainer { Columns = SlotCount };
+		grid.AddThemeConstantOverride("h_separation", GapBetweenSlots);
+		outerHBox.AddChild(grid);
+		for (int index = 0; index < SlotCount; index++) grid.AddChild(CreateSlot(index));
+		outerHBox.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+	}
+
+	private Panel CreateSlot(int index) {
+		var slot = new Panel {
+			Name = $"Slot{index + 1}",
+			CustomMinimumSize = new Vector2(SlotSize, SlotSize)
+		};
+		var style = new StyleBoxFlat();
+		ApplySlotStyle(style, false);
+		slot.AddThemeStyleboxOverride("panel", style);
+
+		var margin = new MarginContainer();
 		margin.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		margin.AddThemeConstantOverride("margin_left", SLOT_MARGIN);
-		margin.AddThemeConstantOverride("margin_right", SLOT_MARGIN);
-		margin.AddThemeConstantOverride("margin_top", SLOT_MARGIN);
-		margin.AddThemeConstantOverride("margin_bottom", SLOT_MARGIN);
+		margin.AddThemeConstantOverride("margin_left", SlotMargin);
+		margin.AddThemeConstantOverride("margin_right", SlotMargin);
+		margin.AddThemeConstantOverride("margin_top", SlotMargin);
+		margin.AddThemeConstantOverride("margin_bottom", SlotMargin);
 		slot.AddChild(margin);
 
-		// 图标（拉伸填充 MarginContainer，保持宽高比居中）
-		TextureRect icon = new () {
-			Name = $"Icon{index}",
+		var icon = new TextureRect {
+			Name = $"Icon{index + 1}",
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+			MouseFilter = Control.MouseFilterEnum.Ignore
 		};
-		if (index == 0) {
-			icon.Texture = GD.Load<Texture2D>("res://asserts/RedGhostCandleBurning128.png");
-		} else if (index == 1) {
-			icon.Texture = GD.Load<Texture2D>("res://asserts/RedGhostCandle128.png");
-		}
 		margin.AddChild(icon);
 
-		// 数量标签（覆盖层，锚定铺满，文字右对齐、下对齐 → 右下角效果）
-		Label label = new();
-		label.Name = $"Count{index}";
-		label.Text = "0";
-		label.HorizontalAlignment = HorizontalAlignment.Right;
-		label.VerticalAlignment = VerticalAlignment.Bottom;
-		label.AddThemeColorOverride("font_color", Colors.White);
-		label.AddThemeFontSizeOverride("font_size", 12);
-		label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		label.OffsetLeft = 2;
-		label.OffsetTop = 2;
-		label.OffsetRight = -2;
-		label.OffsetBottom = -2;
-		slot.AddChild(label);   // 后添加 = 渲染在 MarginContainer 上层
-
+		var count = new Label {
+			Name = $"Count{index + 1}",
+			HorizontalAlignment = HorizontalAlignment.Right,
+			VerticalAlignment = VerticalAlignment.Bottom,
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		count.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		count.OffsetRight = -2;
+		count.OffsetBottom = -2;
+		slot.AddChild(count);
+		_slotViews.Add(new SlotView { Icon = icon, Count = count, Style = style });
 		return slot;
 	}
 
+	private static void ApplySlotStyle(StyleBoxFlat style, bool selected) {
+		style.BgColor = selected ? new Color(0.15f, 0.15f, 0.15f, 0.85f) : new Color(0.05f, 0.05f, 0.05f, 0.85f);
+		style.BorderColor = selected ? new Color(0.8f, 0.8f, 0.8f) : new Color(0.4f, 0.4f, 0.4f);
+		int width = selected ? 3 : 1;
+		style.BorderWidthLeft = style.BorderWidthTop = style.BorderWidthRight = style.BorderWidthBottom = width;
+	}
 
-	// 将 Selector 移动到当前选中 slot 上方
+	private void OnInventorySlotChanged(int inventoryIndex) {
+		int hotbarIndex = GameState.Instance.InventoryToHotbar(inventoryIndex);
+		if (hotbarIndex >= 0) RefreshSlot(hotbarIndex);
+	}
+
+	private void RefreshAllSlots() {
+		for (int index = 0; index < SlotCount; index++) RefreshSlot(index);
+	}
+
+	private void RefreshSlot(int hotbarIndex) {
+		int inventoryIndex = GameState.Instance.HotbarToInventory(hotbarIndex);
+		ItemStack stack = _inventory.GetSlot(inventoryIndex);
+		SlotView view = _slotViews[hotbarIndex];
+		view.Icon.Texture = stack?.Item.GetIcon();
+		view.Icon.Visible = stack != null;
+		view.Count.Text = stack != null && stack.Count > 1 ? stack.Count.ToString() : string.Empty;
+	}
+
 	private void MoveSelectorTo(int newSelectedSlot) {
-		if (!IsSlotValid(newSelectedSlot)) {
-			GD.Print($"Invalid slot index: {newSelectedSlot}");
-			return;
-		}
-		SetSlotPanelStyle(_slotPanelStyleList[_selectedSlot], false);
-		SetSlotPanelStyle(_slotPanelStyleList[newSelectedSlot], true);
+		if (newSelectedSlot < 0 || newSelectedSlot >= SlotCount) return;
+		ApplySlotStyle(_slotViews[_selectedSlot].Style, false);
+		ApplySlotStyle(_slotViews[newSelectedSlot].Style, true);
 		_selectedSlot = newSelectedSlot;
 	}
 
+	public void ShowFeedback(string text) {
+		_feedbackLabel.Text = text;
+		var timer = GetTree().CreateTimer(2.0);
+		timer.Timeout += () => {
+			if (GodotObject.IsInstanceValid(_feedbackLabel) && _feedbackLabel.Text == text) _feedbackLabel.Text = string.Empty;
+		};
+	}
+
 	public override void _UnhandledInput(InputEvent @event) {
-		if (@event is InputEventMouseButton mouseBtn && mouseBtn.Pressed) {
-			int newSelectedSlot = -1;
-			if (mouseBtn.ButtonIndex == MouseButton.WheelUp) {
-				newSelectedSlot = Math.Max(0, _selectedSlot - 1);
-			} else if (mouseBtn.ButtonIndex == MouseButton.WheelDown) {
-				newSelectedSlot = Math.Min(8, _selectedSlot + 1);
-			} else {
-				return;
-			}
+		if (@event is not InputEventMouseButton mouseButton || !mouseButton.Pressed) return;
+		int newSelectedSlot = mouseButton.ButtonIndex switch {
+			MouseButton.WheelUp => Math.Max(0, _selectedSlot - 1),
+			MouseButton.WheelDown => Math.Min(SlotCount - 1, _selectedSlot + 1),
+			_ => -1
+		};
+		if (newSelectedSlot >= 0) {
 			GetViewport().SetInputAsHandled();
-			if (newSelectedSlot == _selectedSlot) {
-				return;
-			}
 			MoveSelectorTo(newSelectedSlot);
+			return;
+		}
+
+		if (mouseButton.ButtonIndex == MouseButton.Right) {
+			PlayerSprite player = GetParent().GetNode<PlayerSprite>("PlayerSprite");
+			if (!player.CanMove) return;
+			ItemUseService.TryUseSlot(_inventory, GetSelectedInventoryIndex(), player, out string feedback);
+			ShowFeedback(feedback);
+			GetViewport().SetInputAsHandled();
 		}
 	}
+
+	public int GetSelectedInventoryIndex() => GameState.Instance.HotbarToInventory(_selectedSlot);
 }

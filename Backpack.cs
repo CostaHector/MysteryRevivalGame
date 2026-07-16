@@ -1,64 +1,86 @@
 using Godot;
-using System;
+using System.Collections.Generic;
 
 public partial class Backpack : CanvasLayer {
-	private bool _isOpen = false;
-	private PlayerSprite _player;
+	private const int SlotCount = GameState.InventorySlots;
+	private const int Columns = 9;
+	private const float SlotSize = 64.0f;
 
-	private const int SLOT_COUNT = 36;
-	private const int COLUMNS = 9;
-	private const float SLOT_SIZE = 64.0f;
+	private readonly List<SlotView> _slotViews = [];
+	private InventoryModel _inventory;
+	private PlayerSprite _player;
+	private int _selectedSlot = -1;
+	private bool _isOpen;
+
+	private sealed class SlotView {
+		public Panel Panel { get; init; }
+		public TextureRect Icon { get; init; }
+		public Label Count { get; init; }
+		public StyleBoxFlat Style { get; init; }
+	}
 
 	public override void _Ready() {
-		// 背包背景：半透明黑色蒙层（拦截背包外点击）
+		Name = "Backpack";
+		BuildInterface();
+		_inventory = GameState.Instance.Inventory;
+		_inventory.SlotChanged += RefreshSlot;
+		RefreshAllSlots();
+		Hide();
+	}
+
+	public override void _ExitTree() {
+		if (_inventory != null) _inventory.SlotChanged -= RefreshSlot;
+	}
+
+	private void BuildInterface() {
 		var dimOverlay = new ColorRect {
 			Name = "DimOverlay",
-			Color = new Color(0, 0, 0, 0.4f)
+			Color = new Color(0, 0, 0, 0.4f),
+			MouseFilter = Control.MouseFilterEnum.Stop
 		};
 		dimOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 		AddChild(dimOverlay);
 
-		Panel backpackPanel = new(){
+		var backpackPanel = new Panel {
 			Name = "BackpackPanel",
 			OffsetLeft = -320.0f,
 			OffsetTop = -150.0f,
 			OffsetRight = 320.0f,
-			OffsetBottom = 150.0f,
+			OffsetBottom = 150.0f
 		};
 		backpackPanel.SetAnchorsPreset(Control.LayoutPreset.Center);
 		AddChild(backpackPanel);
 
-
-		GridContainer grid = new () {
+		var grid = new GridContainer {
 			Name = "GridContainer",
-			Columns = Backpack.COLUMNS,
+			Columns = Columns,
 			OffsetLeft = 16.0f,
 			OffsetTop = 16.0f,
 			OffsetRight = -16.0f,
-			OffsetBottom = -16.0f,
+			OffsetBottom = -16.0f
 		};
 		grid.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 		grid.AddThemeConstantOverride("h_separation", 4);
 		grid.AddThemeConstantOverride("v_separation", 4);
 		backpackPanel.AddChild(grid);
 
-		for (int i = 0; i < Backpack.SLOT_COUNT; i++) {
-			grid.AddChild(CreateSlot(i + 1));
+		for (int index = 0; index < SlotCount; index++) {
+			grid.AddChild(CreateSlot(index));
 		}
-		Hide();
 	}
 
-	// 创建一个格子：Panel → MarginContainer → TextureRect → itemCount
-	// 结构与 PlayerInteractDisplay 中的 Slot 保持一致
 	private Panel CreateSlot(int index) {
-		Panel slot = new(){
-			Name = $"Slot{index}",
-			CustomMinimumSize = new Vector2(SLOT_SIZE, SLOT_SIZE)
+		var slot = new Panel {
+			Name = $"Slot{index + 1}",
+			CustomMinimumSize = new Vector2(SlotSize, SlotSize),
+			MouseFilter = Control.MouseFilterEnum.Stop
 		};
+		var style = new StyleBoxFlat();
+		ApplySlotStyle(style, false);
+		slot.AddThemeStyleboxOverride("panel", style);
+		slot.GuiInput += @event => OnSlotInput(index, @event);
 
-		// no Need set StyleBoxFlat
-
-		MarginContainer margin = new();
+		var margin = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
 		margin.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 		margin.AddThemeConstantOverride("margin_left", 4);
 		margin.AddThemeConstantOverride("margin_right", 4);
@@ -66,30 +88,75 @@ public partial class Backpack : CanvasLayer {
 		margin.AddThemeConstantOverride("margin_bottom", 4);
 		slot.AddChild(margin);
 
-		// 图标（拉伸填充 MarginContainer，保持宽高比居中）
-		TextureRect icon = new () {
-			Name = $"Icon{index}",
+		var icon = new TextureRect {
+			Name = $"Icon{index + 1}",
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+			MouseFilter = Control.MouseFilterEnum.Ignore
 		};
 		margin.AddChild(icon);
 
-		// 数量标签（覆盖层，锚定铺满，文字右对齐、下对齐 → 右下角效果）
-		Label label = new();
-		label.Name = $"Count{index}";
-		label.Text = "0";
-		label.HorizontalAlignment = HorizontalAlignment.Right;
-		label.VerticalAlignment = VerticalAlignment.Bottom;
-		label.AddThemeColorOverride("font_color", Colors.White);
-		label.AddThemeFontSizeOverride("font_size", 12);
-		label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-		label.OffsetLeft = 2;
-		label.OffsetTop = 2;
-		label.OffsetRight = -2;
-		label.OffsetBottom = -2;
-		slot.AddChild(label);
+		var count = new Label {
+			Name = $"Count{index + 1}",
+			HorizontalAlignment = HorizontalAlignment.Right,
+			VerticalAlignment = VerticalAlignment.Bottom,
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		count.AddThemeColorOverride("font_color", Colors.White);
+		count.AddThemeFontSizeOverride("font_size", 12);
+		count.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		count.OffsetLeft = 2;
+		count.OffsetTop = 2;
+		count.OffsetRight = -2;
+		count.OffsetBottom = -2;
+		slot.AddChild(count);
 
+		_slotViews.Add(new SlotView { Panel = slot, Icon = icon, Count = count, Style = style });
 		return slot;
+	}
+
+	private static void ApplySlotStyle(StyleBoxFlat style, bool selected) {
+		style.BgColor = selected ? new Color(0.2f, 0.16f, 0.08f, 0.95f) : new Color(0.05f, 0.05f, 0.05f, 0.9f);
+		style.BorderColor = selected ? Colors.Gold : new Color(0.4f, 0.4f, 0.4f);
+		int width = selected ? 3 : 1;
+		style.BorderWidthLeft = style.BorderWidthTop = style.BorderWidthRight = style.BorderWidthBottom = width;
+	}
+
+	private void RefreshAllSlots() {
+		for (int index = 0; index < _slotViews.Count; index++) RefreshSlot(index);
+	}
+
+	private void RefreshSlot(int index) {
+		if (index < 0 || index >= _slotViews.Count) return;
+		SlotView view = _slotViews[index];
+		ItemStack stack = _inventory.GetSlot(index);
+		view.Icon.Texture = stack?.Item.GetIcon();
+		view.Icon.Visible = stack != null;
+		view.Count.Text = stack != null && stack.Count > 1 ? stack.Count.ToString() : string.Empty;
+		view.Panel.TooltipText = stack == null ? string.Empty : $"{stack.Item.Name}\n{stack.Item.Description}";
+	}
+
+	private void OnSlotInput(int index, InputEvent @event) {
+		if (@event is not InputEventMouseButton mouseButton
+			|| !mouseButton.Pressed
+			|| mouseButton.ButtonIndex != MouseButton.Left) return;
+
+		ItemStack stack = _inventory.GetSlot(index);
+		if (_selectedSlot == index) {
+			SetSelectedSlot(-1);
+		} else if (_selectedSlot >= 0 && stack == null) {
+			_inventory.Move(_selectedSlot, index);
+			SetSelectedSlot(-1);
+		} else if (stack != null) {
+			SetSelectedSlot(index);
+		}
+		GetViewport().SetInputAsHandled();
+	}
+
+	private void SetSelectedSlot(int index) {
+		if (_selectedSlot >= 0) ApplySlotStyle(_slotViews[_selectedSlot].Style, false);
+		_selectedSlot = index;
+		if (_selectedSlot >= 0) ApplySlotStyle(_slotViews[_selectedSlot].Style, true);
 	}
 
 	public override void _UnhandledInput(InputEvent @event) {
@@ -104,14 +171,15 @@ public partial class Backpack : CanvasLayer {
 
 	private void Open() {
 		_isOpen = true;
-		// 通过 Main 查找玩家，禁用其移动（但不暂停游戏，NPC 仍可攻击）
 		_player = GetParent().GetNode<PlayerSprite>("PlayerSprite");
 		_player.CanMove = false;
+		RefreshAllSlots();
 		Show();
 	}
 
 	private void Close() {
 		_isOpen = false;
+		SetSelectedSlot(-1);
 		if (_player != null) _player.CanMove = true;
 		Hide();
 	}
